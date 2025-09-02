@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>PPT Generator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f7fb;
+      display: flex;
+      justify-content: center;
+      align-items: center; 
+      height: 100vh;
+    }
+    .container {
+      background: white;
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      width: 400px;
+      text-align: center;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: none;
+    }
+    button {
+      margin-top: 15px;
+      padding: 12px 20px;
+      background: #0066ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #0050cc;
+    }
+    #status {
+      margin-top: 15px;
+      font-weight: bold;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>AI PPT Generator</h2>
+    <textarea id="prompt" placeholder="Enter your topic here..."></textarea>
+    <label for="theme_select">Choose a theme:</label>
+    <select name="theme" id="theme_select">
+    <option value="Minimalist">Minimalist</option>
+    <option value="Corporate">Corporate</option>
+    <option value="Creative">Creative</option>
+    <option value="Educational">Educational</option>
+    <option value="Technology">Technology</option>
+    <option value="Elegant">Elegant</option>
+    <option value="Energetic">Energetic</option>
+    </select>
+    <button onclick="generatePPT()">Generate PPT</button>
+    <p id="status"></p>
+  </div>
+
+  <script>
+    async function generatePPT() {
+      const prompt = document.getElementById("prompt").value;
+      const theme = document.getElementById("theme_select").value;
+
+      if (!prompt) {
+        alert("Please enter a topic!");
+        return;
+      }
+
+      document.getElementById("status").innerText = "Generating, please wait...";
+
+      const formData = new FormData();
+      formData.append("prompt", prompt);
+      formData.append("theme", theme);
+
+      try {
+        const response = await fetch("http://127.0.0.1:8000/generate_ppt/", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!response.ok) throw new Error("Failed to generate PPT");
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "presentation.pptx";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+
+        window.URL.revokeObjectURL(url);
+        document.getElementById("status").innerText = "✅ PPT downloaded!";
+      } catch (err) {
+        console.error(err);
+        document.getElementById("status").innerText = "❌ Error generating PPT";
+      }
+    }
+  </script>
+</body>
+</html>
