@@ -1,0 +1,3 @@
+# TO add API KEY
+**GEMINI_API_KEY**=----------------------------
+**UNSPLASH_ACCESS_KEY**=-----------------------

@@ -28,6 +28,9 @@
       border: 1px solid #ccc;
       resize: none;
     }
+    input[type="file"] {
+      margin-top: 10px;
+    }
     button {
       margin-top: 15px;
       padding: 12px 20px;
@@ -52,16 +55,10 @@
   <div class="container">
     <h2>AI PPT Generator</h2>
     <textarea id="prompt" placeholder="Enter your topic here..."></textarea>
-    <label for="theme_select">Choose a theme:</label>
-    <select name="theme" id="theme_select">
-    <option value="Minimalist">Minimalist</option>
-    <option value="Corporate">Corporate</option>
-    <option value="Creative">Creative</option>
-    <option value="Educational">Educational</option>
-    <option value="Technology">Technology</option>
-    <option value="Elegant">Elegant</option>
-    <option value="Energetic">Energetic</option>
-    </select>
+    <br>
+    <label for="ppt_template">Upload PPT template (optional):</label>
+    <input type="file" id="ppt_template" accept=".pptx">
+    <br>
     <button onclick="generatePPT()">Generate PPT</button>
     <p id="status"></p>
   </div>
@@ -69,7 +66,7 @@
   <script>
     async function generatePPT() {
       const prompt = document.getElementById("prompt").value;
-      const theme = document.getElementById("theme_select").value;
+      const pptFile = document.getElementById("ppt_template").files[0];
 
       if (!prompt) {
         alert("Please enter a topic!");
@@ -80,10 +77,13 @@
 
       const formData = new FormData();
       formData.append("prompt", prompt);
-      formData.append("theme", theme);
+      if (pptFile) {
+        formData.append("ppt_template", pptFile);
+      }
 
+      // http://127.0.0.1:8000/generate_ppt/    fro local running 
       try {
-        const response = await fetch("http://127.0.0.1:8000/generate_ppt/", {
+        const response = await fetch("http://localhost:3000/generate_ppt/", {
           method: "POST",
           body: formData
         });

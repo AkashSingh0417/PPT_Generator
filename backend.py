@@ -45,7 +45,7 @@ def get_unsplash_image(query):
 
 # Ask Gemini to create slides
 def generate_slides(prompt):
-    model = genai.GenerativeModel("gemini-1.5-flash")
+    model = genai.GenerativeModel("gemini-2.5-flash")
     response = model.generate_content(
         f"""Create a 6-slide presentation in hybrid JSON+Markdown format.
         The output must include:
@@ -77,79 +77,37 @@ def generate_slides(prompt):
 
 # Convert JSON response into PPT
 
-def create_ppt_from_json(json_str, filename, selected_theme): # Add selected_theme parameter
+def create_ppt_from_json(json_str, filename, template_path=None):
     data = json.loads(json_str)
-    prs = Presentation()
 
-    if selected_theme and selected_theme in theme_map: # Add this block
-        theme = theme_map[selected_theme]
-        print(f"✅ PPT will be generated with the {selected_theme} theme")
-    else:
-        style = data.get("layout_style", "Minimalist")
-        theme = theme_map.get(style, theme_map["Minimalist"])
-        print(f"❗ Warning: Selected theme not found or not provided. Using {style} theme instead.")
+    # Load template if provided, else start with blank
+    prs = Presentation(template_path) if template_path else Presentation()
 
-    MAX_POINTS = 6  # max bullet points per slide
-
+    MAX_POINTS = 6
     for slide_data in data["slides"]:
         clean_content = slide_data["content"].replace("-", "").replace("*", "").strip()
         points = [p.strip() for p in clean_content.split(". ") if p.strip()]
 
-        image_query = slide_data.get("image_query")  # <-- Move this up
-
-        # Split into chunks of max bullet points
         for i in range(0, len(points), MAX_POINTS):
             chunk = points[i:i + MAX_POINTS]
 
-            slide_layout = prs.slide_layouts[1]  # Title + Content
+            slide_layout = prs.slide_layouts[1]  # Title + Content from template
             slide = prs.slides.add_slide(slide_layout)
-
-            # Background color
-            background = slide.background
-            fill = background.fill
-            fill.solid()
-            fill.fore_color.rgb = RGBColor.from_string(theme["background"])
 
             # Title
             title = slide.shapes.title
             title.text = slide_data["title"].replace("## ", "").strip()
-            title.text_frame.paragraphs[0].font.size = Pt(32)
-            title.text_frame.paragraphs[0].font.bold = True
-            title.text_frame.paragraphs[0].font.color.rgb = RGBColor.from_string(theme["title_color"])
 
             # Content
             content = slide.placeholders[1]
             text_frame = content.text_frame
             text_frame.clear()
-            text_frame.word_wrap = True
-            text_frame.auto_size = MSO_AUTO_SIZE.TEXT_TO_FIT_SHAPE
-
             for point in chunk:
                 p = text_frame.add_paragraph()
                 p.text = point
-                p.font.size = Pt(20)
-                p.font.color.rgb = RGBColor.from_string(theme["content_color"])
-
-            # Only add image to the first chunk/slide for this slide_data
-            if image_query and i == 0:
-                print(f"🔎 Searching for image with query: '{image_query}'")
-                image_path = get_unsplash_image(image_query)
-                if image_path:
-                    try:
-                        slide_width = prs.slide_width
-                        slide_height = prs.slide_height
-                        img_width = Inches(2.5)
-                        img_height = Inches(2.5)
-                        left = slide_width - img_width - Inches(0.5)
-                        top = slide_height - img_height - Inches(0.5)
-                        pic = slide.shapes.add_picture(image_path, left, top, img_width, img_height)
-                        os.remove(image_path)
-                        print("✅ Image added successfully.")
-                    except Exception as e:
-                        print(f"❌ Could not add image to slide: {e}")
 
     prs.save(filename)
-    print(f"✅ PPT saved as {filename}")
+
 
 if __name__ == "__main__":
     user_prompt = input("Enter the topic for your PowerPoint presentation:")
